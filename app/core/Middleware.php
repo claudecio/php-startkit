@@ -8,7 +8,7 @@
         // Middleware de autenticação
         public static function Auth(): void {
             if (!isset($_SESSION['login']['userData']) || ($_SESSION['login']['allowedUpdatePassword'] == true)) {
-                CoreUtils::redirect(url: '/auth/login');
+                CoreUtils::redirect(url: '/');
                 exit;
             }
         }
@@ -45,7 +45,7 @@
         // Middleware para verificar se o usuário já está logado
         public static function Guest(): void {
             if (isset($_SESSION['login']['userData'])) {
-                CoreUtils::redirect(url: "[home-page]");
+                CoreUtils::redirect(url: "/portal-logado");
                 exit;
             }
         }

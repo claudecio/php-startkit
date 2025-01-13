@@ -26,6 +26,41 @@
         }
 
         /**
+         * Inicia uma transação no banco de dados.
+         *
+         * Este método utiliza a classe Connection para iniciar uma transação.
+         *
+         * @return void
+         */
+        public function beginTransaction():void {
+            Connection::beginTransaction();
+        }
+
+        /**
+         * Reverte uma transação ativa no banco de dados.
+         *
+         * Este método utiliza a classe Connection para desfazer todas as operações
+         * realizadas dentro da transação atual.
+         *
+         * @return void
+         */
+        public function rollBack():void {
+            Connection::rollBack();
+        }
+
+        /**
+         * Confirma uma transação ativa no banco de dados.
+         *
+         * Este método utiliza a classe Connection para confirmar todas as operações
+         * realizadas dentro da transação atual.
+         *
+         * @return void
+         */
+        public function commit():void {
+            Connection::commit();
+        }
+
+        /**
          * Insere um novo registro na tabela.
          *
          * @param string $table A tabela onde o registro será inserido.
@@ -37,14 +72,12 @@
             $binds = implode(separator: ", ", array: array_keys($data));
 
             $sql = "INSERT INTO {$table} ({$columns}) VALUES ({$binds})";
-            Connection::beginTransaction();
             $stmt = Connection::prepare(sql: $sql);
             $stmt -> execute(params: $data);
             if(!$stmt) {
-                Connection::rollBack();
                 return false;
             }
-            Connection::commit();
+            
             return true;
         }
 
@@ -56,33 +89,36 @@
          * @param string $conditions A cláusula WHERE para a atualização.
          * @return bool Retorna true em caso de sucesso, false em caso de falha.
          */
-        public function update(string $table, array $data, string $conditions = "1=1"):bool {
-            // Monta a Querie SQL dinamicamente
-            $sql = "UPDATE {$table} SET";
-            $countParams = count(value: $data);
-            $paramsAdd = 0;
-            
+        public function update(string $table, array $data, string $conditions = "1=1", array $conditionParams = []):bool {
+            // Monta os campos para atualização
+            $setClauses = [];
+            $setParams = [];
+        
             foreach ($data as $key => $value) {
-                $key = preg_replace(pattern: array_keys(['/[:]/u' => '']), replacement: '', subject: $key);
-                $paramsAdd++;
-                if($paramsAdd === $countParams) {
-                    $sql .= " {$key} = :{$key} WHERE {$conditions}";
-                } else {
-                    $sql .= " {$key} = :{$key},";
-                }
+                $cleanKey = ltrim(string: $key, characters: ':'); // Remove ":" para usar no SQL
+                $setClauses[] = "{$cleanKey} = :set_{$cleanKey}";
+                $setParams["set_{$cleanKey}"] = $value;
             }
-
-            // Faz a alteração no banco de dados
-            Connection::beginTransaction();
+        
+            // Prepara as condições
+            $conditionString = $conditions;
+            $conditionParamsWithPrefix = [];
+            foreach ($conditionParams as $key => $value) {
+                $cleanKey = ltrim(string: $key, characters: ':');
+                $conditionString = str_replace(search: $key, replace: ":cond_{$cleanKey}", subject: $conditionString);
+                $conditionParamsWithPrefix["cond_{$cleanKey}"] = $value;
+            }
+        
+            // Combina os parâmetros e monta a query final
+            $sql = "UPDATE {$table} SET " . implode(separator: ', ', array: $setClauses) . " WHERE {$conditionString}";
             $stmt = Connection::prepare(sql: $sql);
-            $stmt -> execute(params: $data);
-            if(!$stmt) {
-                Connection::rollBack();
-                return false;
-            }
-            Connection::commit();
-            return true;
+            $params = array_merge($setParams, $conditionParamsWithPrefix);
+        
+            $success = $stmt->execute(params: $params);
+        
+            return $success !== false;
         }
+        
 
         /**
          * Busca um único registro na tabela.

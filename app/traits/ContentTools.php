@@ -265,6 +265,33 @@
             // Se passou em todas as verificações, o CNPJ é válido
             return true;
         }
+
+        /**
+         * Valida se um nome de usuário é inválido.
+         *
+         * Este método verifica se um nome de usuário atende aos seguintes critérios de validade:
+         * - Possui pelo menos 3 caracteres.
+         * - Contém apenas letras (maiúsculas e minúsculas), números, underscores (_) e hífens (-).
+         * - Não contém espaços.
+         *
+         * @param string $username O nome de usuário a ser validado.
+         * @return bool Retorna true se o nome de usuário for válido (ou seja, *não* inválido) e false caso contrário.
+         */
+        public static function validateIsValidUsername(string $username):bool {
+            // Verifica se o nome de usuário é menor que 3 caracteres.
+            if (strlen(string: $username) < 3) {
+                CoreUtils::addNotification(type: 'warning', message: 'Usuário não pode ser menor que 3 caracteres.');
+                return false;
+            }
+
+            // Verifica se contém símbolos especiais diferentes de _ ou -.
+            if (preg_match(pattern: '/[^a-zA-Z0-9_-]/', subject: $username)) {
+                CoreUtils::addNotification(type: 'warning', message: 'Usuário não pode conter espaços e simbolos especiais diferentes de _ e -.');
+                return false;
+            }
+
+            return true;
+        }
         
         /**
          * Valida um endereço de e-mail.
@@ -584,5 +611,29 @@
             }
 
             echo "<span class='badge rounded-pill text-bg-{$badge_color}'>{$status_text}</span>";
+        }
+
+        /**
+         * Gera uma chave aleatória alfanumérica.
+         *
+         * Este método gera uma string aleatória de um determinado comprimento, contendo
+         * caracteres alfanuméricos (letras maiúsculas e minúsculas e números).
+         *
+         * @param int $length O comprimento da chave a ser gerada.
+         * @return string A chave aleatória gerada, ou uma string vazia em caso de erro.
+         */
+        public function generateRandomKey(int $length):string {
+            // Definir o conjunto de caracteres possíveis
+            $caracteres = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            
+            // Inicializar a chave vazia
+            $chave = '';
+            
+            // Gerar a chave aleatória
+            for ($i = 0; $i < $length; $i++) {
+                $chave .= $caracteres[random_int(min: 0, max: strlen(string: $caracteres) - 1)];
+            }
+            
+            return $chave;
         }
     }

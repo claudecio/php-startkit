@@ -66,4 +66,32 @@
                 unset($_SESSION['notifications']);
             }
         }
+
+        /**
+         * Inclui um ou dois arquivos de cabeçalho.
+         *
+         * Este método inclui um arquivo de cabeçalho principal e, opcionalmente, um
+         * arquivo de cabeçalho secundário. Verifica a existência dos arquivos antes
+         * de incluí-los e exibe notificações de aviso caso algum arquivo não seja
+         * encontrado.
+         *
+         * @param string $mainPath O caminho para o arquivo de cabeçalho principal.
+         * @param string|null $secondaryPath O caminho para o arquivo de cabeçalho secundário (opcional).
+         * @return void
+         */
+        public static function buildHeader(string $mainPath, ?string $secondaryPath = null):void {
+            if(!file_exists(filename: realpath(path: $mainPath))) {
+                Self::addNotification(type: "warning", message: "Arquivo {$mainPath} não foi encontrado.");
+            }
+            
+            if($secondaryPath !== null) {
+                if(!file_exists(filename: realpath(path: $secondaryPath))) {
+                    Self::addNotification(type: "warning", message: "Arquivo {$secondaryPath} não foi encontrado.");
+                } else {
+                    $secondaryPath = realpath(path: $secondaryPath);
+                }
+            }
+
+            require_once $mainPath;
+        }
     }
